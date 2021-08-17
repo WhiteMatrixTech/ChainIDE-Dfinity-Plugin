@@ -1,6 +1,6 @@
-# 🚀 Welcome to your new awesome project!
+# 🚀 Dfinity IDE
 
-This project has been created using **webpack scaffold**, you can now run
+This project has been creating dfnity system with the plugin format , you can now run
 
 ```
 npm run compile
