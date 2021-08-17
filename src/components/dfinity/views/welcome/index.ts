@@ -1,0 +1,1 @@
+export { WelcomeTab } from './WelcomeTab';

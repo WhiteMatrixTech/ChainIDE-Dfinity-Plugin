@@ -1,0 +1,224 @@
+.welcomePage {
+  position: relative;
+  width: 100%;
+  padding: 60px 47px;
+  .head {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: -1;
+    height: 355px;
+    overflow: hidden;
+    background-color: #242a2e;
+    .circle {
+      position: absolute;
+      border-radius: 50%;
+    }
+    .circle1 {
+      top: 126px;
+      right: 142px;
+      width: 92px;
+      height: 92px;
+      background-color: #90a9b5;
+    }
+    .circle2 {
+      top: 73px;
+      right: 89px;
+      width: 198px;
+      height: 198px;
+      background-color: #6a9bb4;
+    }
+    .circle3 {
+      top: -20px;
+      right: -4px;
+      width: 384px;
+      height: 384px;
+      background-color: #3e83b5;
+    }
+    .circle4 {
+      top: -93px;
+      right: -77px;
+      width: 530px;
+      height: 530px;
+      background-color: #1e699f;
+    }
+    .circle5 {
+      top: -405px;
+      right: -389px;
+      width: 1154px;
+      height: 1154px;
+      background-color: #24343d;
+    }
+  }
+  .divide {
+    width: 100%;
+    height: 1px;
+    margin: 48px 0;
+  }
+  .first-level-title {
+    margin-bottom: 48px;
+    font-size: 32px;
+  }
+  .first-level-title-base {
+    font-size: 32px;
+  }
+  .second-level-title {
+    margin-top: 13px;
+    margin-bottom: 25px;
+    font-size: 13px;
+    line-height: 17px;
+  }
+  .ide-introduction {
+    display: flex;
+    align-items: center;
+    margin-top: 23px;
+    margin-bottom: 15px;
+    font-size: 18px;
+    line-height: 17px;
+    img {
+      margin-left: 10px;
+    }
+  }
+  .ide-resource {
+    position: relative;
+    display: flex;
+    margin-top: 30px;
+    flex-wrap: wrap;
+    overflow: hidden;
+    background-color: rgba(32, 33, 35, 0.7);
+    border-radius: 8px;
+    &::before {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: -1;
+      backdrop-filter: saturate(180%) blur(20px);
+      content: '';
+    }
+
+    .resource-card {
+      position: relative;
+      flex: 1;
+      right: 1px;
+      padding: 51px 20px 53px 20px;
+      text-align: center;
+      cursor: pointer;
+      &::before {
+        position: absolute;
+        top: 51px;
+        bottom: 53px;
+        left: 0;
+        width: 1px;
+        background-color: #273c46;
+        content: '';
+      }
+      &:first-child:before {
+        display: none;
+      }
+      img {
+        width: 67px;
+        cursor: pointer;
+      }
+      .resource-card-title {
+        margin-top: 16px;
+        font-size: 17px;
+        line-height: 22px;
+      }
+      .resource-card-subtitle {
+        width: 100%;
+        height: 17px;
+        margin-top: 10px;
+        font-size: 13px;
+        line-height: 17px;
+      }
+    }
+  }
+  .template-list {
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: -55px;
+    .template-card {
+      width: 357px;
+      height: 140px;
+      margin-bottom: 24px;
+      margin-left: 55px;
+      padding: 24px;
+      font-size: 13px;
+      text-align: left;
+      border-radius: 2px;
+      cursor: pointer;
+      .top-part {
+        display: flex;
+        align-items: center;
+        img {
+          width: 18px;
+        }
+        .template-name {
+          width: calc(~'100% - 92px');
+          padding: 0 16px;
+          overflow: hidden;
+          font-weight: 600;
+          font-size: 14px;
+          text-transform: capitalize;
+          text-overflow: ellipsis;
+        }
+        .template-version {
+          width: 50px;
+          font-style: oblique;
+          text-align: right;
+        }
+      }
+      .template-desc {
+        display: -webkit-box;
+        height: calc(~'100% - 37px');
+        overflow: hidden;
+        line-height: 17px;
+        word-break: break-word;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+      }
+    }
+  }
+  .project-list {
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: -160px;
+    .project-card {
+      width: 268px;
+      margin-bottom: 36px;
+      margin-left: 160px;
+      padding: 24px;
+      border-radius: 2px;
+      cursor: pointer;
+      .project-window {
+        width: 100%;
+        height: 124px;
+        margin-bottom: 9px;
+        img {
+          width: 100%;
+          height: 100%;
+        }
+      }
+      .project-card-bottom {
+        display: flex;
+        justify-content: space-between;
+        .project-name {
+          width: 50%;
+          overflow: hidden;
+          font-size: 13px;
+          line-height: 17px;
+          text-overflow: ellipsis;
+        }
+        .project-modify-date {
+          width: 50%;
+          font-size: 13px;
+          line-height: 17px;
+          text-align: right;
+        }
+      }
+    }
+  }
+}
