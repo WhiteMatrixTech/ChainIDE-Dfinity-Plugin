@@ -6,7 +6,9 @@ Users can use the Dfinity development function corresponding to ChainIDE by enab
 
 ### Plugin System Structure 插件项目结构
 src is the main project directory 目录下为主项目目录   
+
 extension.ts Is the project entry 为插件入口文件，暴露三个属性
+
 - activate: 插件激活时，触发该函数，函数入参,
  - ctx: 插件内部上下午
  - Impl: 插件接口
