@@ -1,18 +1,8 @@
 # 🚀 Welcome to Dfinity IDE Project
 
-This project has been created using typescript, you can now run
+ChainIDE uses a form of plug-in to support Dfinity's project engineering.
 
-```
-npm run compile
-```
-
-to bundle your application
-
-```
-npm run start
-```
-
-to start your application
+Users can use the Dfinity development function corresponding to ChainIDE by enabling this plug-in in ChainIDE.
 
 ### Plugin System Structure 插件项目结构
 src is the main project directory 目录下为主项目目录   
