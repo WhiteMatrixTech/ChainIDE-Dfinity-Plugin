@@ -3,9 +3,9 @@ import {
   IAddControlComponent,
   ISetBottomComponent,
   ISetWelcomeComponent,
-  IFileSystemService,
   ProjectBindPluginsConfig
 } from '.';
+import IFileSystemService from './fileSystem/IFileSystem';
 
 export interface ICommand {
   id: string;

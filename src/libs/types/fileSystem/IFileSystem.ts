@@ -1,25 +1,16 @@
-export interface IDisposable {
-  dispose(): void;
-}
-export type Event<T> = (listener: (e: T) => any, thisArgs?: any) => IDisposable;
+import { Event } from '@white-matrix/event-emitter';
+
 export type FileType = '-' | 'd';
 export interface IStat {
   /**
-   * The entry type character
-     describes the type of file, as follows:
-      d     Directory.
-      -     Regular file.
-   */
-  type: FileType;
-  /**
    * Each field has two character positions(only for Regular file):
-      1.   If r, the file is readable; if -, it is not readable.
-      2.   If w, the file is writable; if -, it is not writable.
+      1. If r, the file is only readable;
+      2. If w, the file is read and writable;
    */
   permissions?: string;
   mtime: number;
-  ctime: number;
-  size: number;
+  // ctime: number;
+  // size: number;
 }
 
 export interface ICreateOption {
@@ -32,7 +23,6 @@ export interface IFilesystemChangeEffect {
   moved?: { src: string; dest: string };
   added?: string;
   deleted?: string;
-  contentedChanged?: string;
 }
 
 // backend file change
@@ -40,16 +30,29 @@ export interface IFilesystemSandboxChangeEffect {
   addedUri?: string;
   deletedUri?: string;
   updatedUri?: string;
+  mTime?: number;
+}
+
+export enum FilesystemIndexChangeDetailType {
+  LOAD,
+  ADDED,
+  DELETED,
+  CLEAR
+}
+export interface IFilesystemIndexChangeDetail {
+  type: FilesystemIndexChangeDetailType;
+  list: string[];
 }
 
 export interface IFilesystemIndex {
   indexes: string[];
+  detail: IFilesystemIndexChangeDetail;
 }
 export interface IFilesystemContentChange {
   uri: string;
 }
 
-export interface IFileSystemService {
+export default interface IFileSystemService {
   readonly onFilesystemDidChange: Event<IFilesystemChangeEffect>;
   readonly onFileIndex: Event<IFilesystemIndex>;
   readonly onFileContentChange: Event<IFilesystemContentChange>;
@@ -70,6 +73,7 @@ export interface IFileSystemService {
   readFile(uri: string): Promise<File | null>;
   writeFile(uri: string, file: File): Promise<void>;
   readFileString(uri: string): Promise<string | null>;
+  readSurfaceDirectory(uri: string): Promise<string[] | null>;
   writeFileString(uri: string, content: string): Promise<void>;
   // this content will be cached when create
   createFileString(uri: string, content: string): Promise<void>;

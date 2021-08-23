@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { FontIcon, Spinner, SpinnerSize } from 'office-ui-fabric-react';
+import * as chainIDE from 'chainIDE';
 import { Tree, TreeItem, Key } from '@modules/common/components/tree';
 import { InteractItem } from './interactItem';
 import { ChainIdeClipboard } from '@modules/common/components/clipboard';
@@ -9,12 +10,12 @@ import { dfinity } from '../../../type';
 import cs from 'classnames';
 import styles from './interactPanel.less';
 import { useProjectState } from '@modules/projects/hooks/useProjectState';
-import fileSystemService from '@modules/filesystem/service';
 import outputService from '@modules/editor/services/outputService';
 import { LogSource } from '@modules/editor/services/outputService/IOutputService';
 import { toUri } from '@modules/common/utils/fileUtils';
 
 export const InteractPanel = () => {
+  const { chainIDEProxyImpl } = chainIDE;
   const { currentProjectId } = useProjectState();
   const { deployedDfinityProjects } = useDfinityState();
   const [expandKeys, setExpandKeys] = useState<Key[]>([]);
@@ -28,7 +29,7 @@ export const InteractPanel = () => {
     (path: string) => {
       if (currentProjectId) {
         setLoadingPath(path);
-        fileSystemService
+        chainIDEProxyImpl.fileSystemService
           .delete(toUri(currentProjectId, path))
           .then(() => {
             const storage = new LocalStorage();

@@ -866,6 +866,11 @@
     eslint-plugin-vue "^7.1.0"
     prettier "^2.1.2"
 
+"@white-matrix/event-emitter@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@white-matrix/event-emitter/-/event-emitter-1.0.0.tgz#8125c14ef7aa328dbca63c388bd18af9b07745f3"
+  integrity sha512-elowKWfQmq6YdP+3Q4j7ftw4FVPsQDuGBhq1ztN3Y0uCoS/K6Ul0tSjHIUzKt7ttSTzCxwgK4WyLwSOw4vfoAw==
+
 "@white-matrix/prettier-config@^1.0.9":
   version "1.0.9"
   resolved "https://registry.yarnpkg.com/@white-matrix/prettier-config/-/prettier-config-1.0.9.tgz#6ddb5d5db4f870867c46acd7af616e9415fde2e4"
