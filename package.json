@@ -1,7 +1,7 @@
 {
-  "name": "@white-matrix/extension-sample",
-  "version": "1.0.9",
-  "description": "chainIDE samples extension",
+  "name": "@white-matrix/dfinity-plugin",
+  "version": "1.0.0",
+  "description": "chainIDE dfinity plugin",
   "scripts": {
     "start": "webpack serve --config ./webpack.development.config.js",
     "compile": "webpack --config ./webpack.production.config.js",
@@ -43,6 +43,5 @@
     "office-ui-fabric-react": "^7.148.1",
     "react": "^16.8.0",
     "react-dom": "^16.8.0"
-  },
-  "gitHead": "95273e1df1bef932f894d5dec57da2b9cc0c0d93"
+  }
 }
