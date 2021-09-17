@@ -3,58 +3,40 @@
 ChainIDE uses a form of plug-in to support Dfinity's project engineering.
 
 Users can use the Dfinity development function corresponding to ChainIDE by enabling this plug-in in ChainIDE.
+## Plugin Feature Description
+* In ChainIDE, we use [Monaco Editor](https://microsoft.github.io/monaco-editor/index.html) as a document editor, and set up an editor environment for the Motoko programming language.
+* ChainIDE currently provides an empty template and two sample templates, `Calc` and `Quicksort` what sources form [official example](https://github.com/dfinity/examples).
+* We set up a [ChainIDE-Test Network](http://34.209.219.32:8000) for all users to connect to what ip is http://34.209.219.32:8000
+* In our sandbox, we have pre-install the [DFINITY Canister
+   SDK](https://sdk.dfinity.org)(dfx version 0.8.0) and [Node.js](https://nodejs.org/en/), and we provide two panels for dfinity development in this plugin:  `Deploy`  `Interact`
 
-### Plugin System Structure 插件项目结构
-src is the main project directory 目录下为主项目目录   
+### Plugin System Structure
+`src` is the main project directory.
+`src/components` is the main function code, about `Deploy` `Interact` panels.
+`src/extension.ts` is the project entry, exposes the following three attributes:
 
-extension.ts Is the project entry 为插件入口文件，暴露三个属性
+- `activate`: This function is triggered when the plugin is activated, with the function entry,
+ -  - `ctx`: Plugin Internal Context
+ -  - `chainIDEProxyImpl`: Plugin Interface
 
-- activate: 插件激活时，触发该函数，函数入参,
- - ctx: 插件内部上下午
- - Impl: 插件接口
+- `deactivate`: This function is triggered when the plugin is logged out
+- `config`: Provides basic configuration information for the plugin，view `PluginConfigurations` type
 
-- deactivate: 插件注销时，触发该函数
-- config: 插件提供基本信息，详见 PluginConfigurations 类型
-## API List
-### Add the right control bar 添加右侧控制栏 
-```typescript
-    const addControls =  Impl.addControl({
-        componentFunc: controls,
-        name: 'Deploy & Interaction',
-        iconName: 'GroupObject',
-    })
+### Deploy Panel
 
-    ctx.subscriptions.push(addControls)
-```
+Users can quickly deploy their projects on `ChainIDE-Test Network` in this panel as follows:
 
-### Set up welcome page 设置欢迎页
-```typescript
-    const setWelcomePage =  Impl.setWelcomePage({
-        componentFunc: welcomePage,
-        name: 'welcomePage',
-        iconName: 'GroupObject',
-    })
+![Compatibility](../ChainIDE-Dfinity-Plugin/images/deploy.png)
 
-    ctx.subscriptions.push(setWelcomePage)
-```
+We use DFINITY Canister SDK package in our sandbox to build project. After user clicks `Deploy` button, ChainIDE will open center-bottom Terminal Panel, and call `dfx deploy` service. Then it will display the command line output information.
 
-### Register command 注册命令
-```typescript
-    const setCommand =  Impl.registerCommand({
-        id: 'commandId',
-        name: 'command',
-        callback: <T>(data?: T) => void,
-    })
+<i>panel argument:</i>
+ - `Dfinity Root File`：The project root directory, where the dfx.json configuration file is located
 
-    ctx.subscriptions.push(setCommand)
-```
+ - `Network`：Network address for project deployment
 
-### Registration method 注册方法
-```typescript
-    const registerFunction =  Impl.registerFunction({
-        name: 'functionName',
-        function: <T>(data?: T) => void,
-    })
+ - `Argument`： Specifies an argument using Candid syntax to pass to the canister during deployment. Note that this option requires you to define an actor class in the Motoko program.
 
-    ctx.subscriptions.push(registerFunction)
-```
+ - `Initial Cycles`： Enables you to specify the initial number of cycles for a canister in a project.
+
+### Interact Panel
