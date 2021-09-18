@@ -30,7 +30,7 @@ Users can quickly deploy their projects on `ChainIDE-Test Network` in this panel
 
 We use DFINITY Canister SDK package in our sandbox to build project. After user clicks `Deploy` button, ChainIDE will open center-bottom Terminal Panel, and call `dfx deploy` service. Then it will display the command line output information.
 
-<i>panel argument:</i>
+<i>Deploy Panel Argument:</i>
  - `Dfinity Root File`：The project root directory, where the dfx.json configuration file is located
 
  - `Network`：Network address for project deployment
@@ -40,3 +40,6 @@ We use DFINITY Canister SDK package in our sandbox to build project. After user 
  - `Initial Cycles`： Enables you to specify the initial number of cycles for a canister in a project.
 
 ### Interact Panel
+ChainIDE currently identifies the deployed application by reading the file generated after the project has been deployed and renders the corresponding interaction; click to expand Interact Panel, select the function and enter the parameters, click `Call` button to bring up Terminal Panel, then you can see the result of the call in Terminal.
+
+![Compatibility](../ChainIDE-Dfinity-Plugin/images/interact.png)
