@@ -26,7 +26,7 @@ Users can use the Dfinity development function corresponding to ChainIDE by enab
 
 Users can quickly deploy their projects on `ChainIDE-Test Network` in this panel as follows:
 
-![Compatibility](../ChainIDE-Dfinity-Plugin/images/deploy.png)
+![Compatibility](./images/deploy.png)
 
 We use DFINITY Canister SDK package in our sandbox to build project. After user clicks `Deploy` button, ChainIDE will open center-bottom Terminal Panel, and call `dfx deploy` service. Then it will display the command line output information.
 
@@ -42,4 +42,4 @@ We use DFINITY Canister SDK package in our sandbox to build project. After user 
 ### Interact Panel
 ChainIDE currently identifies the deployed application by reading the file generated after the project has been deployed and renders the corresponding interaction; click to expand Interact Panel, select the function and enter the parameters, click `Call` button to bring up Terminal Panel, then you can see the result of the call in Terminal.
 
-![Compatibility](../ChainIDE-Dfinity-Plugin/images/interact.png)
+![Compatibility](./images/interact.png)
