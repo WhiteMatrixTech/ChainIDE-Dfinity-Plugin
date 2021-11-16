@@ -1,13 +1,22 @@
-import chainIDE from 'chainIDE';
+import get from 'lodash/get';
+import { filterPathByRegex, toUri } from '@modules/common/utils/fileUtils';
+import fileSystemService from '@modules/filesystem/service';
 import { dfinity } from './type';
-import { toUri, filterPathByRegex } from 'libs/utils';
+import {
+  deployedCanistersDirOnIC,
+  deployedNetworkDir,
+  DFINITY_ASSETS_URL_SUFFIX,
+  DFINITY_BUILDED_CANISTER_IDS,
+  DFINITY_BUILDED_FILE_PATH,
+  DFINITY_CANISTER_CONFIG_FILE,
+  DFINITY_IC_ROCKS_LINK,
+  DFINITY_MAIN_NETWORK,
+  DFINITY__Candid_UI_SUFFIX,
+  ECanisterType,
+  networkProtocol
+} from './type/const';
 
-export const DFINITY_LOCAL_NETWORK = 'local';
-export const DFINITY_BUILDED_FILE_PATH = '.dfx';
-const networkProtocol = 'http';
-const deployedNetworkDir = `${DFINITY_BUILDED_FILE_PATH}/${networkProtocol}:`;
-
-export function parseJSON(jsonString: string, defaultJson: any = {}) {
+export function parseJSON(jsonString: string, defaultJson: object = {}) {
   try {
     return JSON.parse(jsonString);
   } catch (e) {
@@ -28,7 +37,7 @@ export function parseDfxNetwork(name: string) {
   return { filePath, networkAddress };
 }
 
-export function parseDfxCandidToAbi(Candid: string | null) {
+export function parseDfxCandidToAbi(Candid: string | void) {
   if (Candid) {
     const candidStrArr = Candid.replaceAll(' ', '')
       .replaceAll('\n', '')
@@ -75,74 +84,64 @@ export function parseDfxCandidToAbi(Candid: string | null) {
 export const fetchAllDfinityRootsFromFs = (
   currentProjectId: string,
   indexes: string[]
-): Promise<dfinity.IDeployArgs[]> => {
-  const { chainIDEProxyImpl } = chainIDE;
-
+): Promise<dfinity.IDfxJson[]> => {
   return new Promise((resolve) => {
     resolve(
       Promise.all(
         filterPathByRegex(indexes, '/*dfx.json$').map(async (path: string) => {
           const newPath = path.replace('dfx.json', '');
-          const content = await chainIDEProxyImpl.fileSystemService
+          const content = await fileSystemService
             .readFileString(toUri(currentProjectId, path))
             .catch((e) => {
               throw e;
             });
           const dfxJson = parseJSON(content);
 
-          let localNetworkAddress = '';
-          if (dfxJson.networks) {
-            Object.entries(dfxJson.networks).forEach(([name, info]) => {
-              if (name === DFINITY_LOCAL_NETWORK && info.bind) {
-                localNetworkAddress = info.bind.includes('http')
-                  ? info.bind
-                  : `http://${info.bind}`;
-              }
-            });
+          let canistersList: string[] = [];
+          if (dfxJson.canisters) {
+            canistersList = Object.keys(dfxJson.canisters);
           }
 
           if (newPath) {
             return {
               dfinityRoot: `root/${newPath}`,
-              network: localNetworkAddress
+              canistersList
             };
           }
-          return { dfinityRoot: 'root/', network: localNetworkAddress };
+          return { dfinityRoot: 'root/', canistersList };
         })
       )
     );
   });
 };
 
-export const findPackageJsonFromFs = (
+export const findPackageJsonFromFs = async (
   currentProjectId: string,
-  indexPath: string
+  _indexPath: string
 ): Promise<boolean> => {
-  return new Promise((resolve, reject) => {
-    const { chainIDEProxyImpl } = chainIDE;
-
-    chainIDEProxyImpl.fileSystemService
-      .getAllPathByRegex(currentProjectId, `/*package.json$`)
-      .then((filePathList: string[]) => {
-        filePathList.map((path: string) => {
-          const newPath = path.replace('package.json', '');
-          if (indexPath === newPath) {
-            resolve(true);
-          }
-        });
-        resolve(false);
-      })
-      .catch(reject);
-  });
+  const packagePathList = await fileSystemService
+    .getAllPathByRegex(currentProjectId, `/*package.json$`)
+    .catch((e) => {
+      console.log('fetch package.json error', e);
+    });
+  if (packagePathList && packagePathList.length > 0) {
+    const isInstalledPackage = await fileSystemService
+      .readSurfaceDirectory(toUri(currentProjectId, 'node_modules'))
+      .catch((e) => {
+        console.log('fetch node_modules error', e);
+      });
+    if (!isInstalledPackage || isInstalledPackage?.length === 0) {
+      return true;
+    }
+  }
+  return false;
 };
 
 export const fetchAllDeployedDfinityProject = (
   currentProjectId: string
-): Promise<dfinity.IDeployedDfinityProjects[]> => {
-  return new Promise((resolve, reject) => {
-    const { chainIDEProxyImpl } = chainIDE;
-
-    chainIDEProxyImpl.fileSystemService
+): Promise<any[]> => {
+  return new Promise((resolve) => {
+    fileSystemService
       .readSurfaceDirectory(toUri(currentProjectId, deployedNetworkDir))
       .then((allDeployedHttpNetwork: string[] | null) => {
         if (allDeployedHttpNetwork) {
@@ -151,34 +150,103 @@ export const fetchAllDeployedDfinityProject = (
               allDeployedHttpNetwork.map(async (networkName) => {
                 const networkAddress = `${networkProtocol}://${networkName}`;
                 const canisterDir = `${deployedNetworkDir}/${networkName}/canisters`;
+                const dfxRenameNetwork = networkAddress.replace(
+                  /[^a-zA-Z0-9]/g,
+                  '_'
+                );
+
                 // eslint-disable-next-line promise/no-nesting
-                let deployedCanisterPath =
-                  await chainIDEProxyImpl.fileSystemService
-                    .readSurfaceDirectory(toUri(currentProjectId, canisterDir))
-                    .catch((e) => {
-                      throw e;
-                    });
-                deployedCanisterPath = deployedCanisterPath
-                  ? deployedCanisterPath.filter(
-                      (name) => name !== 'idl' && !name.includes('assets')
+                const canisterIdsJson = await fileSystemService
+                  .readFileString(
+                    toUri(
+                      currentProjectId,
+                      `${DFINITY_BUILDED_FILE_PATH}/${dfxRenameNetwork}/${DFINITY_BUILDED_CANISTER_IDS}`
                     )
-                  : [];
+                  )
+                  .catch(() => {
+                    console.log(
+                      `Network ${networkAddress} have no file canister_ids.json`
+                    );
+                  });
+                // 此网络下没有canister_ids.json，直接返回
+                if (!canisterIdsJson) {
+                  return null;
+                }
+                // 此网络下找不到canister目录，直接返回
+                // eslint-disable-next-line promise/no-nesting
+                const isDeployCompleted = await fileSystemService
+                  .readSurfaceDirectory(toUri(currentProjectId, canisterDir))
+                  .catch((e) => {
+                    console.log(`${canisterDir}: ${e.message}`);
+                  });
+                if (!isDeployCompleted || isDeployCompleted.length === 0) {
+                  return null;
+                }
+
+                // eslint-disable-next-line promise/no-nesting
+                const dfxJson = await fileSystemService
+                  .readFileString(
+                    toUri(currentProjectId, `${DFINITY_CANISTER_CONFIG_FILE}`)
+                  )
+                  .catch((e) => {
+                    console.log(
+                      `${DFINITY_CANISTER_CONFIG_FILE}: ${e.message}`
+                    );
+                  });
+
+                // dfxJson、canisterIdsJson
+                const dfxJsonContent = dfxJson
+                  ? JSON.parse(dfxJson)
+                  : { canisters: {} };
+                const canisterIdsJsonContent = canisterIdsJson
+                  ? JSON.parse(canisterIdsJson)
+                  : {};
+
+                // canister_ids.json中的__Candid_UI
+                const candidUI = `${networkAddress}?canisterId=${get(
+                  canisterIdsJsonContent,
+                  `${DFINITY__Candid_UI_SUFFIX}.${dfxRenameNetwork}`,
+                  ''
+                )}`;
+
                 const canisterList = await Promise.all(
-                  deployedCanisterPath.map(async (canister) => {
-                    const filePath = `${canisterDir}/${canister}/${canister}.did.d.ts`;
-                    // eslint-disable-next-line promise/no-nesting
-                    const Candid: string | null =
-                      await chainIDEProxyImpl.fileSystemService
+                  Object.keys(canisterIdsJsonContent)
+                    .filter((name) => name !== DFINITY__Candid_UI_SUFFIX)
+                    .map(async (canisterName) => {
+                      const canister = {
+                        canisterName,
+                        canisterId: get(
+                          canisterIdsJsonContent,
+                          `${canisterName}.${dfxRenameNetwork}`,
+                          ''
+                        ),
+                        ...get(dfxJsonContent, `canisters.${canisterName}`, {})
+                      };
+                      if (canister.type === ECanisterType.ASSETS) {
+                        return {
+                          canisterName,
+                          canisterFunctions: [],
+                          canisterId: canister.canisterId,
+                          canisterType: ECanisterType.ASSETS,
+                          candidUI: `${networkAddress}?canisterId=${canister.canisterId}`
+                        };
+                      }
+                      const filePath = `${canisterDir}/${canisterName}/${canisterName}.did.d.ts`;
+                      // eslint-disable-next-line promise/no-nesting
+                      const Candid: string | void = await fileSystemService
                         .readFileString(toUri(currentProjectId, filePath))
                         .catch((e) => {
-                          throw e;
+                          console.log(`${filePath}: ${e.message}`);
                         });
-                    const dfxAbi = parseDfxCandidToAbi(Candid);
-                    return {
-                      canisterName: canister,
-                      canisterFunctions: dfxAbi
-                    };
-                  })
+                      const dfxAbi = parseDfxCandidToAbi(Candid);
+                      return {
+                        canisterName: canisterName,
+                        canisterFunctions: dfxAbi,
+                        canisterId: canister.canisterId,
+                        canisterType: ECanisterType.MOTOKO,
+                        candidUI: `${candidUI}&id=${canister.canisterId}`
+                      };
+                    })
                 );
 
                 return {
@@ -193,99 +261,128 @@ export const fetchAllDeployedDfinityProject = (
           resolve([]);
         }
       })
+      .catch(() => {
+        resolve([]);
+      });
+  });
+};
+
+export const fetchAllDeployedCanistersOnIC = (
+  currentProjectId: string
+): Promise<dfinity.IDeployedDfinityProjects | null> => {
+  return new Promise((resolve, reject) => {
+    fileSystemService
+      .readSurfaceDirectory(toUri(currentProjectId, deployedCanistersDirOnIC))
+      .then(async (allDeployedCanisters: string[] | null) => {
+        if (allDeployedCanisters) {
+          // eslint-disable-next-line promise/no-nesting
+          const dfxJson = await fileSystemService
+            .readFileString(
+              toUri(currentProjectId, `${DFINITY_CANISTER_CONFIG_FILE}`)
+            )
+            .catch((e) => {
+              console.log(`${DFINITY_CANISTER_CONFIG_FILE}: ${e.message}`);
+            });
+          const dfxJsonContent = dfxJson
+            ? JSON.parse(dfxJson)
+            : { canisters: {} };
+
+          // eslint-disable-next-line promise/no-nesting
+          let canisterIdsJson = await fileSystemService
+            .readFileString(
+              toUri(currentProjectId, DFINITY_BUILDED_CANISTER_IDS)
+            )
+            .catch((e) => {
+              console.log(`${DFINITY_CANISTER_CONFIG_FILE}: ${e.message}`);
+            });
+          canisterIdsJson = JSON.parse(canisterIdsJson as string);
+
+          const canisterList = await Promise.all(
+            allDeployedCanisters
+              .filter((name) => name !== 'idl')
+              .map(async (canisterName) => {
+                const canister = {
+                  canisterName,
+                  canisterId: get(
+                    canisterIdsJson,
+                    `${canisterName}.${DFINITY_MAIN_NETWORK}`,
+                    ''
+                  ),
+                  ...get(dfxJsonContent, `canisters.${canisterName}`, {})
+                };
+                if (canister.type === ECanisterType.ASSETS) {
+                  return {
+                    canisterName,
+                    canisterFunctions: [],
+                    canisterId: canister.canisterId,
+                    canisterType: ECanisterType.ASSETS,
+                    candidUI: `https://${canister.canisterId}${DFINITY_ASSETS_URL_SUFFIX}`
+                  };
+                }
+                const filePath = `${deployedCanistersDirOnIC}/${canisterName}/${canisterName}.did.d.ts`;
+                // eslint-disable-next-line promise/no-nesting
+                const Candid: string | void = await fileSystemService
+                  .readFileString(toUri(currentProjectId, filePath))
+                  .catch((e) => {
+                    console.log(`${filePath}: ${e.message}`);
+                  });
+                const dfxAbi = parseDfxCandidToAbi(Candid);
+                return {
+                  canisterName: canisterName,
+                  canisterFunctions: dfxAbi,
+                  canisterId: canister.canisterId,
+                  canisterType: ECanisterType.MOTOKO,
+                  candidUI: `${DFINITY_IC_ROCKS_LINK}/${canister.canisterId}`
+                };
+              })
+          );
+          resolve({
+            deployedFilePath: deployedCanistersDirOnIC,
+            networkAddress: DFINITY_MAIN_NETWORK,
+            canisterList
+          });
+        } else {
+          resolve(null);
+        }
+      })
       .catch(reject);
   });
 };
 
-export const _back_fetchAllDeployedDfinityProject = async (
+export const generateCanisterIdsJson = async (
+  canisterIds: Record<string, string>,
   currentProjectId: string
 ) => {
-  const { chainIDEProxyImpl } = chainIDE;
-  // dfx.json的位置
-  const path = 'dfx.json';
-
-  const content = await chainIDEProxyImpl.fileSystemService
-    .readFileString(toUri(currentProjectId, path))
-    .catch((e) => {
-      throw e;
-    });
-  const dfxJson = parseJSON(content);
-
-  if (!dfxJson || !dfxJson.canisters) {
-    return [];
-  }
-
-  const canisterList = Object.entries(dfxJson.canisters)
-    .map(([name, info]: [name: string, info: any]) => {
-      return { canisterName: name, type: info.type };
-    })
-    .filter((canister) => canister.type !== 'assets');
-
-  let localNetworkAddress = '';
-  if (dfxJson.networks) {
-    Object.entries(dfxJson.networks).forEach(
-      ([name, info]: [name: string, info: any]) => {
-        if (name === DFINITY_LOCAL_NETWORK && info.bind) {
-          localNetworkAddress = info.bind.includes('http')
-            ? info.bind
-            : `http://${info.bind}`;
-        }
-      }
-    );
-  }
-
-  const walletJsonPathList =
-    await chainIDEProxyImpl.fileSystemService.getAllPathByRegex(
-      currentProjectId,
-      '/*wallets.json$'
-    );
-  if (walletJsonPathList.length === 0) {
-    return [];
-  }
-  const walletContent = await chainIDEProxyImpl.fileSystemService
-    .readFileString(toUri(currentProjectId, walletJsonPathList[0]))
-    .catch((e) => {
-      throw e;
-    });
-
-  if (!walletContent) {
-    return [];
-  }
-  const walletJson = parseJSON(walletContent);
-  return Object.entries(walletJson.identities.default).map(([name]) => {
-    const deployedProject = {
-      fileName: name,
-      canisterList: canisterList,
-      networkAddress: '',
-      filePath: `.dfx/${DFINITY_LOCAL_NETWORK}/canisters`
+  const canisterIdsJson = {};
+  Object.keys(canisterIds).forEach((name) => {
+    canisterIdsJson[name] = {
+      [DFINITY_MAIN_NETWORK]: canisterIds[name]
     };
-    if (name === DFINITY_LOCAL_NETWORK) {
-      deployedProject.networkAddress = localNetworkAddress;
-    } else {
-      deployedProject.filePath = parseDfxNetwork(name).filePath;
-      deployedProject.networkAddress = parseDfxNetwork(name).networkAddress;
-    }
-    return deployedProject;
   });
+
+  await fileSystemService
+    .writeFileString(
+      toUri(currentProjectId, DFINITY_BUILDED_CANISTER_IDS),
+      JSON.stringify(canisterIdsJson, null, 2)
+    )
+    .catch((err) => {
+      throw err;
+    });
+
+  return true;
 };
 
-export const handleDeployArgs = async (
-  currentProjectId: string,
-  argsObg: dfinity.IDeployArgs
+export const handleDeployArgs = (
+  argsObg: dfinity.IDeployArgs,
+  cargoTargetPath: string
 ) => {
   const { dfinityRoot, network, argument, cycles } = argsObg;
   const dfinityProjectPath = dfinityRoot.replace('root/', '');
-  const havePackageJson = await findPackageJsonFromFs(
-    currentProjectId,
-    dfinityProjectPath
-  );
 
-  const startNetworkCommand = '';
   const cdFileCommand = dfinityProjectPath
-    ? `&arg=cd ${dfinityProjectPath}`
+    ? `cd ${dfinityProjectPath}&arg=`
     : '';
-  const npmInstallCommand = havePackageJson ? '&arg=npm install' : '';
-  let deployCommand = 'dfx deploy';
+  let deployCommand = `${cargoTargetPath}dfx deploy`;
   deployCommand = network
     ? `${deployCommand} --network ${network}`
     : deployCommand;
@@ -300,6 +397,6 @@ export const handleDeployArgs = async (
 
   deployCommand = `${deployCommand}`;
 
-  const deployArg = `${startNetworkCommand}${cdFileCommand}${npmInstallCommand}${deployCommand}`;
+  const deployArg = `${cdFileCommand}${deployCommand}`;
   return deployArg;
 };

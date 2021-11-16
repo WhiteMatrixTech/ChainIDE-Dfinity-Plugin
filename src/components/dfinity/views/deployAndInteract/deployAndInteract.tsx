@@ -1,13 +1,9 @@
-import React, { useCallback } from 'react';
+import React from 'react';
+import { useIntl } from 'react-intl';
 import Collapse from '@modules/common/components/collapse';
 import { DeployForm } from './deployForm';
 import { InteractPanel } from './interact/interactPanel';
-import { Button, ButtonType, Scroll } from '@modules/common/components';
-import { Stack } from 'office-ui-fabric-react/lib/Stack';
-import { useDispatch } from 'react-redux';
-import { useIntl } from 'react-intl';
-import { PanesActions, PanesContentType } from '@store/actions';
-import { usePanesState } from '@views/workspace/workspaceDetail/workbench/hooks/usePanesState';
+import { Scroll } from '@modules/common/components';
 
 import style from './deployAndInteract.less';
 
@@ -15,33 +11,6 @@ const { Panel } = Collapse;
 
 export const DeployAndInteractPanel = () => {
   const intl = useIntl();
-  const dispatch = useDispatch();
-  const paneState = usePanesState();
-
-  const _onStartNetwork = useCallback(() => {
-    const command = window.encodeURI('dfx start --host 127.0.0.1:8443');
-    if (paneState.centerBottom?.contentType === PanesContentType.TERMINAL) {
-      paneState.terminal?.createShell?.(command);
-    } else {
-      dispatch(
-        PanesActions.updateLayout({
-          ...paneState.layout,
-          bottom: paneState.layout.bottom || 300
-        })
-      );
-      dispatch(
-        PanesActions.updateCenterBottomPane(PanesContentType.TERMINAL, {
-          args: command
-        })
-      );
-    }
-  }, [
-    dispatch,
-    paneState.centerBottom?.contentType,
-    paneState.layout,
-    paneState.terminal
-  ]);
-
   return (
     <div className={style.deployAndInteract}>
       {/* <div className={style.generalFormWrapper}>

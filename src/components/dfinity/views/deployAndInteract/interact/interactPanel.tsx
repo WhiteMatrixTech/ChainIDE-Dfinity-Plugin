@@ -1,23 +1,21 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useContext } from 'react';
 import { FontIcon, Spinner, SpinnerSize } from 'office-ui-fabric-react';
-import * as chainIDE from 'chainIDE';
 import { Tree, TreeItem, Key } from '@modules/common/components/tree';
 import { InteractItem } from './interactItem';
-import { ChainIdeClipboard } from '@modules/common/components/clipboard';
 import { LocalStorage } from '@modules/common/utils/storage';
-import { useDfinityState } from '../../../selectors';
 import { dfinity } from '../../../type';
 import cs from 'classnames';
 import styles from './interactPanel.less';
 import { useProjectState } from '@modules/projects/hooks/useProjectState';
+import fileSystemService from '@modules/filesystem/service';
 import outputService from '@modules/editor/services/outputService';
 import { LogSource } from '@modules/editor/services/outputService/IOutputService';
 import { toUri } from '@modules/common/utils/fileUtils';
+import { DfinityContext } from '../../../DfinityProvider';
 
 export const InteractPanel = () => {
-  const { chainIDEProxyImpl } = chainIDE;
   const { currentProjectId } = useProjectState();
-  const { deployedDfinityProjects } = useDfinityState();
+  const { deployedDfinityProjects } = useContext(DfinityContext);
   const [expandKeys, setExpandKeys] = useState<Key[]>([]);
 
   const _onExpand = useCallback((expandedKeys: Key[]) => {
@@ -29,7 +27,7 @@ export const InteractPanel = () => {
     (path: string) => {
       if (currentProjectId) {
         setLoadingPath(path);
-        chainIDEProxyImpl.fileSystemService
+        fileSystemService
           .delete(toUri(currentProjectId, path))
           .then(() => {
             const storage = new LocalStorage();
@@ -89,12 +87,11 @@ export const InteractPanel = () => {
                       />
                     )
                   }>
-                  {canisterList.map((canister, i) => {
+                  {canisterList.map((canister) => {
                     return _renderCanisterItem(
                       networkAddress,
                       deployedFilePath,
-                      canister,
-                      i
+                      canister
                     );
                   })}
                 </TreeItem>
@@ -113,14 +110,23 @@ export const InteractPanel = () => {
   function _renderCanisterItem(
     networkAddress: string,
     fileName: string,
-    canister: dfinity.ICanisterDefinition,
-    index: number
+    canister: dfinity.ICanisterDefinition
   ) {
     return (
       <TreeItem
         key={`${networkAddress}-${canister.canisterName}`}
         itemKey={`${networkAddress}-${canister.canisterName}`}
-        title={`canisterName: ${canister.canisterName}`}>
+        title={`canister: ${canister.canisterName}`}
+        actions={
+          <FontIcon
+            onClick={(e) => {
+              e.stopPropagation();
+              _openAssetsLink(canister);
+            }}
+            className={styles.cursor}
+            iconName="OpenInNewWindow"
+          />
+        }>
         {canister.canisterFunctions.map((canisterFunction, i) => {
           return _renderFunctionHeader(
             fileName,
@@ -157,5 +163,9 @@ export const InteractPanel = () => {
         />
       </TreeItem>
     );
+  }
+
+  function _openAssetsLink(canister: dfinity.ICanisterDefinition) {
+    window.open(canister.candidUI);
   }
 };

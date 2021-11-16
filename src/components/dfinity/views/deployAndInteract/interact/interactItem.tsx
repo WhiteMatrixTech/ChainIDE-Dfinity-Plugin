@@ -4,11 +4,10 @@ import { Button, ButtonType } from '@modules/common/components';
 import { Input } from '@modules/common/components/input';
 import Form, { Field } from 'rc-field-form';
 import { dfinity } from '../../../type';
-import { DFINITY_LOCAL_NETWORK } from '../../../utils';
-import { useDispatch } from 'react-redux';
-import { PanesActions, PanesContentType } from '@store/actions';
-import { usePanesState } from '@views/workspace/workspaceDetail/workbench/hooks/usePanesState';
 import styles from './interactPanel.less';
+import { DFINITY_LOCAL_NETWORK } from '../../../type/const';
+import { useProjectState } from '@modules/projects/hooks/useProjectState';
+import { useCallTerminal } from '../../../hooks/useCallTerminal';
 
 interface IInteractItem {
   networkAddress: string;
@@ -19,12 +18,12 @@ interface IInteractItem {
 }
 
 export const InteractItem = memo((props: IInteractItem) => {
-  const dispatch = useDispatch();
   const [form] = Form.useForm();
-  const paneState = usePanesState();
+  const { currentProjectId = '' } = useProjectState();
   const { networkAddress, fileName, canister, canisterFunction } = props;
   const { functionName, argumentList } = canisterFunction;
 
+  const _call = useCallTerminal();
   const onCall = useCallback(() => {
     form
       .validateFields()
@@ -40,41 +39,17 @@ export const InteractItem = memo((props: IInteractItem) => {
 
         callCommand = window.encodeURI(callCommand);
 
-        if (paneState.centerBottom?.contentType === PanesContentType.TERMINAL) {
-          paneState.terminal?.createShell?.(callCommand);
-        } else {
-          dispatch(
-            PanesActions.updateLayout({
-              ...paneState.layout,
-              bottom: paneState.layout.bottom || 300
-            })
-          );
-          dispatch(
-            PanesActions.updateCenterBottomPane(PanesContentType.TERMINAL, {
-              args: callCommand
-            })
-          );
-          setTimeout(() => {
-            dispatch(
-              PanesActions.updateCenterBottomPane(
-                PanesContentType.TERMINAL,
-                null
-              )
-            );
-          }, 1000);
-        }
+        _call(callCommand, currentProjectId, true, 'dfx');
       })
       .catch(() => {});
   }, [
+    _call,
     canister.canisterName,
-    dispatch,
+    currentProjectId,
     fileName,
     form,
     functionName,
-    networkAddress,
-    paneState.centerBottom?.contentType,
-    paneState.layout,
-    paneState.terminal
+    networkAddress
   ]);
 
   return (

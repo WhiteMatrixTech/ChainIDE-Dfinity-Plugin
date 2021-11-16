@@ -1,3 +1,10 @@
+@resources: home, explorer, document, forums;
+
+.backgroundImage(@img, @img2x) {
+  background-image: -webkit-image-set(url(@img) 1x, url(@img2x) 2x);
+  background-image: image-set(url(@img) 1x, url(@img2x) 2x);
+}
+
 .welcomePage {
   position: relative;
   width: 100%;
@@ -11,44 +18,29 @@
     height: 355px;
     overflow: hidden;
     background-color: #242a2e;
-    .circle {
+    .backgroundImage('../../../../../../assets/static/img/dfinity/welcome/head_bg.png', '../../../../../../assets/static/img/dfinity/welcome/head_bg@2x.png');
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    .headBg {
+      width: 100%;
+      height: 100%;
+      .backgroundImage('../../../../../../assets/static/img/dfinity/welcome/welcome_bg.png', '../../../../../../assets/static/img/dfinity/welcome/welcome_bg@2x.png');
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+    }
+    .decorate {
       position: absolute;
-      border-radius: 50%;
+      bottom: 0;
+      top: 0;
+      background-repeat: no-repeat;
     }
-    .circle1 {
-      top: 126px;
-      right: 142px;
-      width: 92px;
-      height: 92px;
-      background-color: #90a9b5;
-    }
-    .circle2 {
-      top: 73px;
-      right: 89px;
-      width: 198px;
-      height: 198px;
-      background-color: #6a9bb4;
-    }
-    .circle3 {
-      top: -20px;
-      right: -4px;
-      width: 384px;
-      height: 384px;
-      background-color: #3e83b5;
-    }
-    .circle4 {
-      top: -93px;
-      right: -77px;
-      width: 530px;
-      height: 530px;
-      background-color: #1e699f;
-    }
-    .circle5 {
-      top: -405px;
-      right: -389px;
-      width: 1154px;
-      height: 1154px;
-      background-color: #24343d;
+    .decorate.circle {
+      width: 454px;
+      right: 0;
+      .backgroundImage('../../../../../../assets/static/img/dfinity/welcome/head-circle.png', '../../../../../../assets/static/img/dfinity/welcome/head-circle@2x.png');
+
+      background-size: 100% 100%;
+      background-position: right center;
     }
   }
   .divide {
@@ -118,9 +110,21 @@
       &:first-child:before {
         display: none;
       }
-      img {
-        width: 67px;
+      .cardIcon {
+        width: 70px;
+        height: 70px;
         cursor: pointer;
+        background-size: contain;
+        background-position: center center;
+        background-repeat: no-repeat;
+        margin: 0 auto;
+      }
+      :global {
+        each(@resources, {
+          .@{value} {
+            .backgroundImage('../../../../../../assets/static/img/dfinity/welcome/@{value}-img.png', '../../../../../../assets/static/img/dfinity/welcome/@{value}-img@2x.png');
+          }
+        });
       }
       .resource-card-title {
         margin-top: 16px;
@@ -136,6 +140,11 @@
       }
     }
   }
+
+  .resource-card:hover {
+    background-color: rgba(56, 78, 168, 0.7);
+  }
+
   .template-list {
     display: flex;
     flex-wrap: wrap;
@@ -176,6 +185,7 @@
         height: calc(~'100% - 37px');
         overflow: hidden;
         line-height: 17px;
+        margin-top: 10px;
         word-break: break-word;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;

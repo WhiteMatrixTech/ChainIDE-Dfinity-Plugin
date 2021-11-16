@@ -1,3 +1,4 @@
+import { ECanisterType } from './../utils';
 import { dfinityActionTypes } from '../actions';
 export declare namespace dfinity {
   interface IChainCodeSourceMap {
@@ -6,14 +7,27 @@ export declare namespace dfinity {
 
   interface IDeployArgs {
     dfinityRoot: string;
-    network: string;
+    network?: string;
     argument?: string;
     cycles?: string;
+  }
+
+  interface IDfxJson extends IDeployArgs {
+    canistersList: string[];
   }
 
   interface IInteractArgs {
     methodName: string;
     argument: string;
+  }
+
+  interface IDfinityDfxJsonCanister {
+    main?: string;
+    dependencies?: string[];
+    frontend?: { entrypoint: string };
+    source?: string[];
+    canisterName: string;
+    type: ECanisterType;
   }
 
   interface IDeployedDfinityNetwork {
@@ -37,9 +51,12 @@ export declare namespace dfinity {
   }
 
   interface ICanisterDefinition {
+    canisterType: ECanisterType;
     networkAddress?: string;
     deployedFilePath?: string;
     canisterName: string;
+    canisterId: string;
+    candidUI: string;
     canisterFunctions: ICanisterFunction[];
   }
 

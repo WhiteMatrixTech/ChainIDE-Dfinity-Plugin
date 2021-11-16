@@ -1,13 +1,9 @@
 import { WelcomeTab } from './views/welcome';
 import { PluginType, Plugin, PluginContext } from '@modules/extensions/types';
 import chainIDE from '@modules/extensions/client/chainIdeProxyImpl';
-import icon from '@assets/static/img/ethereum/bottom-eth-logo.svg';
-import { DeployAndInteractPanel } from './views/deployAndInteract';
-import { dfinityState } from './reducers';
-import {
-  updateAllDeployedDfinityProjectEpic,
-  updatePackageSourceRootsEpic
-} from './epics';
+import icon from '@assets/static/img/dfinity/dfinity.png';
+import { DfinityTools } from './views/tools';
+import { DfinityProvider } from './DfinityProvider';
 
 export const pluginConfig: Plugin = {
   activate(ctx: PluginContext) {
@@ -15,28 +11,22 @@ export const pluginConfig: Plugin = {
       componentId: 'dfinity-di',
       name: 'Deploy & Interaction',
       iconName: 'GroupObject',
-      componentFunc: DeployAndInteractPanel
+      componentFunc: DfinityProvider
     });
+
+    const tools = chainIDE.addControl({
+      componentId: 'dfinity-tools',
+      name: 'Tools',
+      iconName: 'Toolbox',
+      componentFunc: DfinityTools
+    });
+
     const welcomePage = chainIDE.setWelcomePage({
       componentId: 'dfinity-welcome',
       componentFunc: WelcomeTab
     });
 
-    ctx.subscriptions.push(deploy, welcomePage);
-
-    const reduxModule = {
-      reducerMap: {
-        dfinityState
-      },
-      epics: [
-        updatePackageSourceRootsEpic,
-        updateAllDeployedDfinityProjectEpic
-      ],
-      initialActions: [],
-      finalActions: []
-    };
-
-    chainIDE.addModule('@chainide/dfinity', reduxModule);
+    ctx.subscriptions.push(deploy, tools, welcomePage);
   },
 
   deactivate(_ctx: PluginContext) {},
@@ -45,7 +35,7 @@ export const pluginConfig: Plugin = {
     subscriptions: []
   },
   config: {
-    pluginId: 'dfinityPlugin',
+    pluginId: '@chainide/dfinity',
     version: '0.0.1',
     type: PluginType.view,
     active: true,

@@ -9,7 +9,10 @@ import {
   LogAction
 } from '@modules/common/utils/analyticsUtils';
 import { IStateTypes } from 'store/types';
-import { TemplateActionTypes } from '@modules/editor/actions/template.actions';
+import {
+  IChainType,
+  TemplateActions
+} from '@modules/editor/actions/template.actions';
 import { ITemplateState } from '@modules/editor/reducers/template.reducer';
 import { ITemplate } from '@modules/editor/services/templateService/ITemplateService';
 import { useProjectCreate } from '@modules/projects/hooks/useProjectOperator';
@@ -25,18 +28,19 @@ import { useHistory } from 'react-router-dom';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { confirmDialog } from '@modules/common/components/dialog';
 import { useGetDeviceId } from '@modules/accounts/hooks';
+import { Locale } from '@modules/editor/actions/locale.actions';
 
 interface HomeResource {
-  title: string;
-  subTitle: string;
-  imgSrc: string;
+  title: string | JSX.Element;
+  subTitle: string | JSX.Element;
+  key: string;
   linkSrc: string;
 }
 
 const getResourceCard = (cardInfo: HomeResource) => {
   return (
     <div
-      key={cardInfo.imgSrc}
+      key={cardInfo.key}
       className={cs([style['resource-card'], 'resource'])}
       onClick={() => {
         window.open(cardInfo.linkSrc);
@@ -46,7 +50,7 @@ const getResourceCard = (cardInfo: HomeResource) => {
           extra: { cardTitle: cardInfo.title }
         });
       }}>
-      <img src={cardInfo.imgSrc} alt={cardInfo.title} />
+      <div className={cs(style.cardIcon, cardInfo.key)} />
       <div style={firstFontStyle} className={style['resource-card-title']}>
         {cardInfo.title}
       </div>
@@ -58,10 +62,52 @@ const getResourceCard = (cardInfo: HomeResource) => {
 };
 
 export function WelcomeTab() {
-  const intl = useIntl();
   const dispatch = useDispatch();
   const { userId } = useGetDeviceId();
   const chain = useChainProfile();
+  const { formatMessage } = useIntl();
+
+  const { language } = useSelector((state: IStateTypes) => state.language);
+  const externalLinks = useMemo(() => {
+    return {
+      [Locale.EN]: 'https://chainide.gitbook.io/chainide-english-1/',
+      [Locale.ZH]: 'https://chainide.gitbook.io/chainide-chinese/'
+    };
+  }, []);
+  const resourceCardList: HomeResource[] = useMemo(
+    () => [
+      {
+        title: formatMessage({ id: 'HomePage' }),
+        subTitle: formatMessage({ id: 'HomePageSubTitle' }),
+        linkSrc: 'https://chainide.com/',
+        key: 'home'
+      },
+      {
+        title: formatMessage({ id: 'DfinityExplorer' }),
+        subTitle: formatMessage({ id: 'DfinityExplorerSubTitle' }),
+        linkSrc: 'https://www.dfinityexplorer.org/',
+        key: 'explorer'
+      },
+      {
+        title: formatMessage({ id: 'ChainIDEDocument' }),
+        subTitle: formatMessage({ id: 'ChainIDEDocumentSubTitle' }),
+        linkSrc: externalLinks[language],
+        key: 'document'
+      },
+      {
+        title: formatMessage({ id: 'OfficialForums' }),
+        subTitle: (
+          <FormattedMessage
+            id="OfficialForumsSubTitle"
+            values={{ chain: 'Dfinity' }}
+          />
+        ),
+        linkSrc: 'https://forum.chainide.com/',
+        key: 'forums'
+      }
+    ],
+    [externalLinks, formatMessage, language]
+  );
 
   const templateState: ITemplateState = useSelector(
     (state: IStateTypes) => state.template
@@ -73,10 +119,12 @@ export function WelcomeTab() {
   const _createProject = useCallback(
     (t: ITemplate) => {
       confirmDialog(t.name, t.describe, {
-        okText: 'Use Template To Create',
+        okText: formatMessage({ id: 'useTemplateToCreate' }),
+        cancelText: formatMessage({ id: 'cancelText' }),
         onOk: () => {
           _newProject(
-            t.key,
+            t.id,
+            true,
             (chain: string, id: string, readmePath?: string) => {
               history.replace(
                 `/${chain}/${id}${
@@ -88,56 +136,28 @@ export function WelcomeTab() {
         }
       });
     },
-    [_newProject, history]
+    [_newProject, history, formatMessage]
   );
 
   useEffect(() => {
-    dispatch({ type: TemplateActionTypes.LOAD_TEMPLATES, data: chain });
+    dispatch(TemplateActions.loadTemplates(chain as IChainType, true));
   }, [chain, dispatch]);
-
-  const resourceCardList: HomeResource[] = useMemo(
-    () => [
-      {
-        title: intl.formatMessage({ id: 'HomePage' }),
-        subTitle: intl.formatMessage({ id: 'HomePageSubTitle' }),
-        imgSrc: require('../../../../../../assets/static/img/ethereum/eth-homepage.png'),
-        linkSrc: 'https://chainide-home-dev.whitematrix.workers.dev/'
-      },
-      {
-        title: 'Dfinity Internet Computer',
-        subTitle:
-          'Develop internet-scale dapps, defi & cyber rails using canister smart contracts',
-        imgSrc: require('../../../../../../assets/static/img/ethereum/eth-github.png'),
-        linkSrc: 'https://dfinity.org/developers/'
-      },
-      {
-        title: intl.formatMessage({ id: 'DfinityDevOfficial' }),
-        subTitle: intl.formatMessage({ id: 'DfinityDevOfficialSubTitle' }),
-        imgSrc: require('../../../../../../assets/static/img/ethereum/eth-website.png'),
-        linkSrc: 'https://discord.com/invite/2S2yqSb4hA'
-      },
-      {
-        title: intl.formatMessage({ id: 'OfficialForums' }),
-        subTitle: intl.formatMessage({ id: 'OfficialForumsSubTitle' }),
-        imgSrc: require('../../../../../../assets/static/img/ethereum/eth-doc.png'),
-        linkSrc: 'https://forum.chainide.com/'
-      }
-    ],
-    [intl]
-  );
 
   const getTemplate = (t: ITemplate) => {
     return (
       <Stack
         styles={stackStyles}
-        key={t.key}
+        key={t.id}
         onClick={(e) => {
           e.stopPropagation();
           _createProject(t);
         }}>
         <div className={cs([style['template-card'], 'template'])}>
           <div className={style['top-part']}>
-            <img src="/static/img/dfinity/dfinity.png" alt="" />
+            <img
+              src={require('../../../../../../assets/static/img/dfinity/dfinity.png')}
+              alt=""
+            />
             <div style={firstFontStyle} className={style['template-name']}>
               {t.name}
             </div>
@@ -156,11 +176,8 @@ export function WelcomeTab() {
       <div className={style.welcomePage}>
         <LogOnMount eventType="WELCOME_EXPOSURE" action={LogAction.exposure} />
         <div className={style.head}>
-          <div className={cs(style.circle, style.circle5)}></div>
-          <div className={cs(style.circle, style.circle4)}></div>
-          <div className={cs(style.circle, style.circle3)}></div>
-          <div className={cs(style.circle, style.circle2)}></div>
-          <div className={cs(style.circle, style.circle1)}></div>
+          <div className={style.headBg}></div>
+          <div className={cs(style.decorate, style.circle)}></div>
         </div>
         <img
           src={require('../../../../../../assets/static/img/img-logo-chainide.png')}
@@ -172,7 +189,7 @@ export function WelcomeTab() {
           <FormattedMessage id="welcomeTitle" />
           <img
             width="140"
-            src={require('../../../../../../assets/static/img/dfinity/dfinity-log.svg')}
+            src={require('../../../../../../assets/static/img/dfinity/dfinity-logo.svg')}
             alt="dfinity logo"
           />
         </div>
