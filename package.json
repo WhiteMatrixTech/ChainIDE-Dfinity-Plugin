@@ -31,7 +31,7 @@
     "inject-body-webpack-plugin": "^1.3.0",
     "less": "^4.1.1",
     "less-loader": "10.0.1",
-    "shelljs": "^0.8.4",
+    "shelljs": "^0.8.5",
     "style-loader": "3.2.1",
     "terser-webpack-plugin": "^5.1.1",
     "ts-loader": "9.2.3",
